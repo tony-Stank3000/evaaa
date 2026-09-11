@@ -1,0 +1,77 @@
+code_settings:    # define a training or test setup
+  env_name: evaaa 
+  load_model: false
+  model_ckpt: 
+  gpu: 3
+  write_tensorbaord_step: 1000    # for writing to a tensorboard
+  write_tensorboard_each_episodes: 1
+  save_model_each_episodes: 1
+  experiment: train
+  model_type: DQN
+  seed: 46   # Initializing with a random seed
+  port: 8210
+  tag: train-level-1.2-CorneredResource51 # for saving results. Specify a file name 
+  # tag: debug # for debugging and avoiding saving results
+
+mainCofnig:
+    isAIControlled: true
+    configFolderName: "train-level-1.1-ScatteredResource"
+    recordingScreen:
+        recordEnable: false
+        recordingFolderName: "Recordings"
+    experimentData:
+        recordEnable: false
+        baseFolderName: "Data"
+        fileNamePrefix: ""
+
+engine_configuration:   # for stimulating Unity 
+  time_scale: 15
+  width: 100
+  height: 100
+  no_graphics: false
+
+environment_parameters:
+  common:
+    singleTrial: false    # Checking for success in specific experiments (Not available now)
+  ev:   # for defining EV parameters
+    evSize: 4
+  # for sensor parameters
+  visualSensor:
+    useVisual: true
+    visualHight: 64
+    visualWidth: 64
+
+  olfactorySensor:
+    useOlfactory: true
+    olfactorySensorLength: 100
+    olfactoryFeatureSize: 10
+
+  thermoSensor:
+    useThermo: true
+    thermoSensorChangeRate: 10
+    thermoSensorSize: 8
+
+  collisionSensor:
+    useCollision: true
+    collisionFeatureSize: 10
+
+  touchSensor:
+    useTouchObs: true
+    touchSensorSize: 1
+
+
+## DQN parameter
+agent_parameter:
+  n_episode: 10000    # Defining the maximum episode length
+  max_time_step: 300000
+  gamma: 0.95   # Discount factor to adjust the weighting of future rewards
+  train_start: 1000     # Start training after the agent has as much experience as train_start
+  learning_rate: 0.0001   # Using gradient descent to update
+  epsilon: 1.0     # Choosing an action based on Epsilon Greedy
+  epsilon_start: 1.0   # Epsilon starting value
+  epsilon_end: 0.1    # Epsilon final value. (Starts at epsilon_start and decreases toward epsilon_end) 
+  exploration_steps: 209000   # Number of exploration steps that decrease the Epsilon value
+  batch_size: 12    # Number of Sampled Transitions in the ReplayBuffer
+  target_update_period: 5000    # Target network is updated with current network's weight by 'target_update_period'
+  reward_shaping: 1  # indicating whether the reward is shaping (1 = enable, 0 = disable)
+

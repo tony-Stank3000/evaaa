@@ -1,0 +1,3 @@
+Episode,TotalSteps,AvgReward,MaxReward,MinReward,FoodConsumed,WaterConsumed,FinalFoodLevel,FinalWaterLevel,FinalTempLevel,FinalHealthLevel,Collisions,None%,Forward%,Left%,Right%,Eat%,EpisodeEndType,TotalEvents,UniqueEventTypes
+1,393,-0.52,0.00,-0.99,2,0,-5.79,-11.79,-4.98,-12.32,2,31.47,44.16,11.93,10.15,1.78,HealthLevelTooLow,0,0
+2,485,-0.61,0.00,-1.03,0,13,-14.52,-1.52,0.31,-98.79,11,24.55,47.48,9.86,12.88,2.62,HealthLevelTooLow,0,0

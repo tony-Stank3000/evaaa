@@ -1,0 +1,45 @@
+# @package _global_
+
+# specify here default training configuration
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .
+
+fabric:
+  accelerator: cpu
+
+env:
+  base_dir: "/media/nas01/projects/Interoceptive-AI/interoceptive-ai_from_sheeprl/envs"
+  port: 3901
+  config: overeatingSubgoal-short
+  wrapper:
+    env_cfg:
+      env:
+        base_dir_: ${env.base_dir}
+        env_name: two_resource 
+        env_ver: 0.15.8-250306-1430 # load training env
+        # env_ver: 0.15.8-250318 # load training env
+        config_: ${env.config}
+        env_port: ${env.port}
+
+      engine_configuration:  # for stimulating Unity 
+        time_scale: 1 # speeding
+        width: 1000
+        height: 1000
+        no_graphics: false
+      environment_parameters:   
+        common:
+          recordEnable: true   # for recording (Screenshot)
+          # recordingFolder: testRecording
+
+seed: null
+num_threads: 1
+disable_grads: True
+checkpoint_path: ???
+float32_matmul_precision: "high"

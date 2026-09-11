@@ -1,0 +1,4 @@
+every: 50000
+resume_from: ${checkpoint_path}
+save_last: True
+keep_last: 5
