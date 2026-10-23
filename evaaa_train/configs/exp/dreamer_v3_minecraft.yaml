@@ -1,0 +1,28 @@
+# @package _global_
+defaults:
+  - override /algo: dreamer_v3_S
+  - override /env: minecraft_bridge
+  - override /model_manager: dreamer_v3
+  - _self_
+
+algo:
+  replay_ratio: 1
+  total_steps: 1000000
+  per_rank_batch_size: 16
+  per_rank_sequence_length: 64
+  cnn_keys:
+    encoder: [rgb]
+    decoder: [rgb]
+  mlp_keys:
+    encoder: [ev, olfactory, thermo, collision, touch]
+    decoder: [ev, olfactory, thermo, collision, touch]
+
+env:
+  num_envs: 1
+
+checkpoint:
+  every: 100000
+
+buffer:
+  size: 100000
+  checkpoint: true
