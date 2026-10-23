@@ -1,0 +1,19 @@
+defaults:
+  - default
+  - _self_
+
+id: minecraft_bridge
+num_envs: 1
+action_repeat: 1
+capture_video: false
+screen_size: 64
+max_episode_steps: null
+
+# The bridge must be running separately in Minecraft Java.
+# Keep this endpoint loopback-only.
+wrapper:
+  _target_: envs.minecraft_bridge.MinecraftBridgeEnv
+  host: 127.0.0.1
+  port: 8765
+  timeout: 5.0
+  rgb_shape: [64, 64, 3]
