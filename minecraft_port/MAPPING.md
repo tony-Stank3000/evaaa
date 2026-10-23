@@ -1,39 +1,49 @@
 # Observation/action mapping ledger: EVAAA → Minecraft
 
-Status: initial audit only. No Minecraft mapping has been validated against a running environment yet.
+Status: upstream action/reward source audited; Minecraft-side mappings are not validated against a running world yet.
 
-## Upstream contract verified from `evaaa_train/README.md`
+## Verified upstream observations
 
-The documented EVAAA vector observation `obs[1]` contains:
+The default training config requests RGB visual observations plus these vector channels:
 
-| Vector indices | Upstream meaning | Minecraft equivalent | Status |
-|---|---|---|---|
-| 0–3 | Food, water, temperature, health | TBD | Do not infer equivalent units or dynamics without auditing Unity implementation |
-| 4–13 | 10 olfactory resource-property values | TBD | Minecraft has no direct equivalent; define and document approximation |
-| 14–21 | 8 directional thermal sensors | TBD | Requires an explicit sensing model; do not silently substitute biome temperature |
-| 22–31 | 10 collision sectors (100 rays grouped into sectors) | TBD | Requires raycast/block/entity sensing and calibration |
-| `obs[0]` | Visual camera observation | Minecraft screenshot/frame | Image shape, frame rate, and preprocessing must be specified and tested |
+| Channel | Baseline shape | Upstream meaning | Minecraft mapping | Status |
+|---|---:|---|---|---|
+| rgb | 64×64×3 in this adapter contract | Visual camera frame | Minecraft rendered frame | Bridge capture and preprocessing still required |
+| ev | 4 | Food, water, temperature, health | TBD | Preserve order; units and dynamics must be mapped |
+| olfactory | 10 | Resource-property sensing vector | TBD | No direct Minecraft equivalent; any proxy must be documented |
+| thermo | 8 | Directional thermal sensing | TBD | Do not silently substitute biome temperature |
+| collision | 10 | Directional collision features | TBD | Original implementation uses raycast-based sectors; Minecraft sensing needs calibration |
+| touch | 1 | Touch/contact signal | TBD | Define contact semantics explicitly |
 
-The documented discrete action indices are:
+The raw Unity agent's CollectObservations also includes position, rotation, and event counters. The selected training wrapper's enabled sensors and actual observation layout must be checked against the target experiment before training. This adapter currently exposes the five configured named vector channels plus RGB and does not claim raw-vector equivalence.
 
-| Index | EVAAA action | Minecraft mapping | Status |
-|---:|---|---|---|
-| 0 | None | No-op | Straightforward, needs adapter test |
-| 1 | Forward | Move forward for a bounded tick interval | Approximation; movement physics differ |
-| 2 | Left (turn and move) | Turn/move left for bounded ticks | Approximation; calibrate yaw and movement |
-| 3 | Right (turn and move) | Turn/move right for bounded ticks | Approximation; calibrate yaw and movement |
-| 4 | Eat (consume nearby resource) | Eat inventory food if available | Not equivalent until resource range, inventory, hunger and action outcomes are defined |
+## Verified action IDs
 
-## Required audit before implementing the adapter
+| Index | Name | Upstream Unity behavior | Minecraft mapping | Status |
+|---:|---|---|---|---|
+| 0 | none | Stop movement | No-op/stop | Not yet implemented in Minecraft |
+| 1 | forward | Move forward | Bounded forward input | Requires tick and speed calibration |
+| 2 | left | Rotate left | Turn left | Requires yaw calibration |
+| 3 | right | Rotate right | Turn right | Requires yaw calibration |
+| 4 | eat | Set eat-action flag and attempt nearby resource consumption | Resource interaction | Minecraft inventory/food behavior is not equivalent without a defined rule |
 
-- Inspect the Unity C# source for exact variable update equations, units, bounds, sensor calculations, reward calculation, terminal conditions, and action timing.
-- Inspect `evaaa_train/simple_example.py`, environment wrappers, and DQN/PPO/DreamerV3 configurations to confirm actual shapes and algorithm assumptions.
-- Decide which upstream behaviors can be represented directly in Minecraft and which require explicit approximations.
-- Add contract tests for observation shape, value ranges, action validity, reset behavior, terminal states, and deterministic replay where possible.
-- Record every difference in this ledger. A Minecraft port is a cross-environment adaptation, not an exact reproduction of Unity results.
+Source audited: evaaa_unity/Assets/Scripts/Agent/InteroceptiveAgent.cs and ResourceEating.cs.
+
+## Reward and episode semantics audited
+
+The Unity reward method sets all four set points to zero, normalizes each resource-level deviation by the configured maximum for that resource, sums squared deviations, takes the square root, and returns the negative value. The Unity agent updates resource levels with configured coefficients and Time.fixedDeltaTime. Episodes can end when food, water, or enabled thermal levels leave configured ranges, when health exceeds its configured maximum (despite the log label saying "too low"), on single-trial resource consumption, or when max steps are reached.
+
+Do not copy this reward equation blindly into Minecraft. First map resource units, ranges, coefficient dynamics, tick timing, and terminal conditions. If Minecraft-native survival rewards are preferred, record them as a separate experiment rather than calling the result a faithful port.
+
+## Required before claiming fidelity
+
+- Implement the Minecraft Java bridge for the actual target Minecraft version and mod loader.
+- Specify frame capture, vector scaling, sensor update timing, action duration, reset semantics, and resource interactions.
+- Test observation shapes/ranges and action validity; test terminal/truncation behavior and reset determinism where possible.
+- Run the original Unity baseline and compare training curves and episode metrics before making reproduction claims.
 
 ## Provenance
 
-Upstream: https://github.com/cocoanlab/evaaa
-Fork: https://github.com/tony-Stank3000/evaaa
-The repository is licensed CC BY-NC-SA 4.0; retain attribution and comply with its terms.
+Upstream: https://github.com/cocoanlab/evaaa  
+Fork: https://github.com/tony-Stank3000/evaaa  
+The upstream repository is licensed CC BY-NC-SA 4.0; retain attribution and comply with its terms.
