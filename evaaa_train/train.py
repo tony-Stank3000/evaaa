@@ -88,12 +88,22 @@ def main(cfg: DictConfig):
     env_cfg_save_dir = os.path.join(cfg_save_dir, "env_cfg")
     os.makedirs(env_cfg_save_dir, exist_ok=True)
 
-    env_cfg = cfg.env.wrapper.env_cfg
-    env_cfg_dir =  os.path.join(cfg.env.base_dir, env_cfg["env"]["env_name"], "Config", cfg.env.config)
-
-    dst_dir = os.path.join(env_cfg_save_dir, os.path.basename(env_cfg_dir))
-
-    shutil.copytree(env_cfg_dir, dst_dir, dirs_exist_ok=True)
+    # Unity-backed EVAAA environments carry a separate scene configuration.
+    # Non-Unity environments (such as the Minecraft bridge) do not have this
+    # directory and must not be forced through the Unity-specific copy path.
+    wrapper_target = str(cfg.env.wrapper.get("_target_", ""))
+    if "env_cfg" in cfg.env.wrapper and "env" in cfg.env.wrapper.env_cfg:
+        env_cfg = cfg.env.wrapper.env_cfg
+        env_cfg_dir = os.path.join(
+            cfg.env.base_dir, env_cfg["env"]["env_name"], "Config", cfg.env.config
+        )
+        if os.path.isdir(env_cfg_dir):
+            dst_dir = os.path.join(env_cfg_save_dir, os.path.basename(env_cfg_dir))
+            shutil.copytree(env_cfg_dir, dst_dir, dirs_exist_ok=True)
+        elif "InteroceptiveAIWrapper" in wrapper_target:
+            raise FileNotFoundError(
+                f"Unity EVAAA configuration directory was not found: {env_cfg_dir}"
+            )
 
     # Launch the algorithm
     fabric.launch(reproducible(command), cfg, **kwargs)
