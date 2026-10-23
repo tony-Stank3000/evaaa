@@ -1,43 +1,54 @@
 # EVAAA Minecraft port (experimental)
 
-This directory is an **adapter boundary**, not a claim that EVAAA has already been ported or reproduced in Minecraft.
+This directory contains the initial Python-side bridge client and a protocol contract. It is not yet a complete, live Minecraft port: a Minecraft Java-side implementation is still required.
 
-## Non-negotiable reproduction rules
+## Implementation status
 
-1. Keep upstream `evaaa_train/` and `evaaa_unity/` unchanged unless a change is required to make the original code runnable; document every such change.
-2. Keep Minecraft-specific code in this directory.
-3. Do not silently map Minecraft values to EVAAA physiological variables. Record each mapping, unit, update frequency, and any approximation in `MAPPING.md`.
-4. Keep the original training algorithm/configuration as the baseline. Any algorithm changes belong in a separately named experimental configuration.
-5. Do not claim paper reproduction until the original baseline has been run and its metrics compared with the publication.
+- [x] Audit upstream action IDs in InteroceptiveAgent.cs: 0 no-op, 1 forward, 2 left, 3 right, 4 eat.
+- [x] Audit upstream reward equation: negative Euclidean distance from a zero set point, normalized by each configured maximum for the four resource levels.
+- [x] Implement a Gymnasium TCP client with protocol handshake, finite timeout, loopback-only default, strict observation/action validation, and baseline observation keys/shapes.
+- [x] Add trainer environment config and PPO/DreamerV3 experiment configs.
+- [x] Add contract tests for action mapping, observation space, malformed observations, non-finite values, pixel bounds, and loopback policy.
+- [ ] Implement Minecraft Java-side bridge for the chosen Minecraft version/mod loader.
+- [ ] Map real game state to EVAAA variables and sensors; calibrate units, tick duration, and movement.
+- [ ] Run contract tests and a live Minecraft smoke test; compare metrics against the original baseline.
 
-## Target architecture
+## Reproduction rules
 
-```text
-Minecraft Java (private local world/server)
-        |
-        v
-Minecraft adapter (observations, actions, episode reset)
-        |
-        v
-EVAAA-compatible environment contract
-        |
-        v
-Original EVAAA training/evaluation code (unchanged baseline)
-        |
-        v
-Recorded transitions, checkpoints, metrics, provenance
-```
+1. Preserve upstream evaaa_train/ and evaaa_unity/ unless a required change is documented.
+2. Keep Minecraft-specific behavior isolated from the Unity environment.
+3. Do not infer physiological units from Minecraft values. Record every mapping, unit, update frequency, and approximation in MAPPING.md.
+4. Keep baseline algorithm/config separate from Minecraft-specific experiments.
+5. Do not claim paper reproduction until baseline results are compared with the publication.
 
-The adapter must expose observations and actions only after the exact source environment's interface has been audited. Until then, this is an integration plan and contract, not a drop-in SheepRL environment.
+## Architecture
 
-## Next steps
+Minecraft Java (private local world)
+→ Minecraft Java bridge (not yet implemented)
+→ JSON-lines TCP on loopback
+→ Python Gymnasium adapter (implemented)
+→ EVAAA trainer configs (PPO / DreamerV3)
+→ transitions, checkpoints, metrics
 
-- Audit `evaaa_train/README.md`, its configs, environment registration and agent implementations.
-- Audit Unity observation/action definitions and internal-variable update rules.
-- Record the original observation/action/reward/state contract.
-- Implement the smallest Minecraft equivalent and write contract tests.
-- Run original Unity baseline first where feasible, then run Minecraft experiments with the same algorithm and clearly report environment-induced differences.
+## Current files
+
+- PROTOCOL.md: version-1 wire contract.
+- python/evaaa_minecraft_env.py: standalone adapter module.
+- python/test_evaaa_minecraft_env.py: contract validation tests.
+- evaaa_train/envs/minecraft_bridge.py: adapter wired into EVAAA training import path.
+- evaaa_train/configs/env/minecraft_bridge.yaml: environment configuration.
+- evaaa_train/configs/exp/ppo_minecraft.yaml and dreamer_v3_minecraft.yaml: separate training configs.
+- MAPPING.md: verified upstream behavior and unresolved Minecraft mappings.
+
+## Training entry points
+
+From the evaaa_train directory, after the Minecraft bridge is implemented and running:
+
+- PPO: python train.py exp=ppo_minecraft
+- DreamerV3: python train.py exp=dreamer_v3_minecraft
+
+These are configured entry points, not evidence of a successful run. The custom DQN script currently constructs Unity ML-Agents directly and has not been adapted to the Minecraft bridge.
 
 ## Runtime boundary
 
-Use a private test world. The Minecraft client/bridge should bind to loopback by default, validate incoming actions, apply per-step timeouts, and stop safely on disconnect. Never expose a command-execution endpoint to the network.
+Use a private test world. Keep the bridge bound to loopback, validate actions, bound game ticks per action, and stop safely on disconnect. Do not expose an unauthenticated command-execution endpoint to the network.
