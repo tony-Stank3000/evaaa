@@ -11,6 +11,10 @@ on:
       - ".github/workflows/luanti-bridge-tests.yml"
   workflow_dispatch:
 
+concurrency:
+  group: luanti-bridge-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   bridge-contract:
     runs-on: ubuntu-latest
