@@ -66,7 +66,7 @@ class LuantiBridgeContractTests(unittest.TestCase):
         worker.join(timeout=2)
         self.assertFalse(worker.is_alive())
         obs, _info = output["value"]
-        self.assertEqual(obs["rgb"].shape, (64, 64, 3))
+        self.assertEqual(obs["rgb"].shape, (3, 64, 64))
         self.assertEqual(obs["ev"].shape, (4,))
         self.assertEqual(obs["olfactory"].shape, (10,))
         self.assertTrue(self.env.observation_space.contains(obs))
