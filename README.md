@@ -183,3 +183,10 @@ EVAAA (Essential Variables in Autonomous and Adaptive Agents) is a research plat
 ## 📄 License
 This project is licensed under the [License: CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
+
+
+## Experimental free-game port: Luanti
+
+The active free-game integration lives in [luanti_port/README.md](luanti_port/README.md). It targets Luanti with Mineclonia selected for a Minecraft-like survival environment and uses a local Lua-mod ↔ Python HTTP bridge. It does not require Minecraft Java Edition.
+
+This is an experimental adaptation, not a faithful reproduction of the Unity simulation yet. Sensor meanings, need dynamics, rewards, reset behavior, and live integration must be calibrated and tested before reporting scientific results. The earlier [Minecraft Java scaffold](minecraft_port/README.md) is retained as a legacy interface contract only.
