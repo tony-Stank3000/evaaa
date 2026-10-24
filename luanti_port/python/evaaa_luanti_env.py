@@ -78,7 +78,6 @@ class _Broker:
     def publish(self, message: dict[str, Any]) -> None:
         with self.condition:
             self.latest = message
-            self.sequence += 1
             self.condition.notify_all()
 
 
