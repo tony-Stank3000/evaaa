@@ -1,0 +1,17 @@
+defaults:
+  - default
+  - _self_
+
+id: luanti_bridge
+num_envs: 1
+action_repeat: 1
+capture_video: false
+screen_size: 64
+max_episode_steps: null
+
+# Luanti mod polls this local-only HTTP endpoint.
+wrapper:
+  _target_: envs.luanti_bridge.LuantiBridgeEnv
+  host: 127.0.0.1
+  port: 8766
+  timeout: 15.0
