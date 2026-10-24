@@ -22,7 +22,7 @@ The mod needs Luanti's asynchronous HTTP API to communicate with the Python proc
 
     secure.http_mods = evaaa_luanti
 
-This setting grants HTTP API access to the named mod; do not add unrelated mods. The bridge URL is hard-coded to loopback (127.0.0.1:8766) by default. If your Luanti build blocks loopback HTTP requests, do not disable broader security controls; we will adjust the transport after checking the exact Luanti version/log.
+This setting grants HTTP API access to the named mod; do not add unrelated mods. The bridge URL is hard-coded to loopback (127.0.0.1:8766) by default. The Python adapter and Lua mod use protocol version 2 with per-command request IDs; install both from the same repository revision. If your Luanti build blocks loopback HTTP requests, do not disable broader security controls; we will adjust the transport after checking the exact Luanti version/log.
 
 ## 4. Python dependencies and training
 
