@@ -49,6 +49,10 @@ class _Broker:
             while self.sequence <= before and not self.closed:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
+                    # Do not leave an unconsumed command wedged in the queue after a timeout.
+                    if self.pending is command:
+                        self.pending = None
+                        self.condition.notify_all()
                     raise TimeoutError("Timed out waiting for Luanti. Confirm the world is open and the mod is enabled.")
                 self.condition.wait(remaining)
             if self.closed:
@@ -194,8 +198,8 @@ class LuantiBridgeEnv(gym.Env):
 
     def close(self) -> None:
         if getattr(self, "_server", None):
-            self._broker.closed = True
             with self._broker.condition:
+                self._broker.closed = True
                 self._broker.condition.notify_all()
             self._server.shutdown()
             self._server.server_close()
