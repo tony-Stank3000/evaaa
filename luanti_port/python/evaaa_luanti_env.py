@@ -102,6 +102,18 @@ class _Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self) -> None:
+        if self.path == "/health":
+            with self.broker.condition:
+                self._send_json(200, {
+                    "ok": not self.broker.closed,
+                    "protocol_version": PROTOCOL_VERSION,
+                    "pending_command": self.broker.pending is not None,
+                    "last_response_id": (
+                        self.broker.latest.get("request_id")
+                        if self.broker.latest is not None else None
+                    ),
+                })
+            return
         if self.path != "/api/next":
             self._send_json(404, {"error": "not_found"})
             return
