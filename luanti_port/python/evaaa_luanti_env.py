@@ -18,7 +18,8 @@ from gymnasium import spaces
 PROTOCOL_VERSION = 1
 ACTION_NAMES = {0: "none", 1: "forward", 2: "left", 3: "right", 4: "eat"}
 VECTOR_SHAPES = {"ev": (4,), "olfactory": (10,), "thermo": (8,), "collision": (10,), "touch": (1,)}
-WIRE_RGB_SHAPE = (64, 64, 3)  # Lua JSON uses height, width, RGB channels\nMODEL_RGB_SHAPE = (3, 64, 64)  # EVAAA CNN pipeline expects channel-first tensors
+WIRE_RGB_SHAPE = (64, 64, 3)  # Lua JSON uses height, width, RGB channels
+MODEL_RGB_SHAPE = (3, 64, 64)  # EVAAA CNN pipeline expects channel-first tensors
 
 
 class BridgeProtocolError(RuntimeError):
