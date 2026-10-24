@@ -15,7 +15,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
 ACTION_NAMES = {0: "none", 1: "forward", 2: "left", 3: "right", 4: "eat"}
 VECTOR_SHAPES = {"ev": (4,), "olfactory": (10,), "thermo": (8,), "collision": (10,), "touch": (1,)}
 WIRE_RGB_SHAPE = (64, 64, 3)  # Lua JSON uses height, width, RGB channels
@@ -31,7 +31,7 @@ class _Broker:
         self.condition = threading.Condition()
         self.pending: dict[str, Any] | None = None
         self.latest: dict[str, Any] | None = None
-        self.sequence = 0
+        self.next_request_id = 0
         self.closed = False
 
     def enqueue(self, command: dict[str, Any], timeout: float) -> dict[str, Any]:
@@ -44,17 +44,24 @@ class _Broker:
                 self.condition.wait(remaining)
             if self.closed:
                 raise RuntimeError("Luanti bridge server is closed.")
-            before = self.sequence
+            self.next_request_id += 1
+            request_id = self.next_request_id
+            command = {**command, "request_id": request_id}
             self.pending = command
             self.condition.notify_all()
-            while self.sequence <= before and not self.closed:
+            while (
+                (self.latest is None or self.latest.get("request_id") != request_id)
+                and not self.closed
+            ):
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
-                    # Do not leave an unconsumed command wedged in the queue after a timeout.
+                    # A late response is ignored by the next request because IDs must match.
                     if self.pending is command:
                         self.pending = None
                         self.condition.notify_all()
-                    raise TimeoutError("Timed out waiting for Luanti. Confirm the world is open and the mod is enabled.")
+                    raise TimeoutError(
+                        "Timed out waiting for Luanti. Confirm the world is open and the mod is enabled."
+                    )
                 self.condition.wait(remaining)
             if self.closed:
                 raise RuntimeError("Luanti bridge server is closed.")
@@ -113,6 +120,8 @@ class _Handler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(size).decode("utf-8"))
             if not isinstance(payload, dict) or payload.get("protocol_version") != PROTOCOL_VERSION:
                 raise ValueError("invalid protocol version")
+            if not isinstance(payload.get("request_id"), int) or payload["request_id"] < 1:
+                raise ValueError("request_id must be a positive integer")
             if not isinstance(payload.get("observation"), dict):
                 raise ValueError("observation must be an object")
             self.broker.publish(payload)
