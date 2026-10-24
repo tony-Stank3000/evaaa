@@ -163,8 +163,8 @@ class LuantiBridgeEnv(gym.Env):
         if set(obs) != expected:
             raise BridgeProtocolError(f"Observation keys mismatch: {set(obs)}")
         rgb = np.asarray(obs["rgb"])
-        if rgb.shape != RGB_SHAPE or not np.issubdtype(rgb.dtype, np.number):
-            raise BridgeProtocolError(f"rgb must be numeric with shape {RGB_SHAPE}, got {rgb.shape}")
+        if rgb.shape != WIRE_RGB_SHAPE or not np.issubdtype(rgb.dtype, np.number):
+            raise BridgeProtocolError(f"rgb must be numeric with shape {WIRE_RGB_SHAPE}, got {rgb.shape}")
         if not np.isfinite(rgb).all() or np.any(rgb < 0) or np.any(rgb > 255) or not np.equal(rgb, np.floor(rgb)).all():
             raise BridgeProtocolError("rgb pixels must be integer values in [0,255]")
         result: dict[str, np.ndarray] = {"rgb": np.transpose(rgb.astype(np.uint8, copy=False), (2, 0, 1)).copy()}
