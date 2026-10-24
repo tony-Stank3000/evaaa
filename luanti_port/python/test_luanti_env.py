@@ -71,6 +71,13 @@ class LuantiBridgeContractTests(unittest.TestCase):
             self.assertEqual(response.status, 200)
             self.assertTrue(json.loads(response.read().decode("utf-8"))["ok"])
 
+    def test_health_endpoint_reports_protocol(self):
+        with urlopen(f"http://127.0.0.1:{self.env.port}/health", timeout=1.0) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["protocol_version"], PROTOCOL_VERSION)
+        self.assertFalse(data["pending_command"])
+
     def test_action_mapping(self):
         self.assertEqual(ACTION_NAMES, {0: "none", 1: "forward", 2: "left", 3: "right", 4: "eat"})
 
