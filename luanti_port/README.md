@@ -9,7 +9,7 @@ This is the free-game target for the project. It runs on Luanti with a game such
 ## Status — do not overstate
 
 - [x] Define a separate Luanti implementation path; the earlier minecraft_port/ Java/Fabric adapter is not used by this path.
-- [x] Add a Lua mod scaffold and Python Gymnasium HTTP bridge contract.
+- [x] Add a Lua mod scaffold and Python Gymnasium HTTP bridge contract.\n- [x] Correlate command responses with request IDs so late responses cannot satisfy later steps.
 - [x] Keep the bridge local-only and require explicit Luanti HTTP permission.
 - [ ] Run against the user's installed Luanti + Mineclonia build.
 - [ ] Verify Mineclonia item groups and movement behavior in a live world.
@@ -20,7 +20,7 @@ This is **not yet a validated reproduction** of the original EVAAA experiment. L
 
 ## Architecture
 
-Luanti server/mod (mods/evaaa_luanti) ⇄ local HTTP polling bridge ⇄ Python Gymnasium environment ⇄ existing EVAAA training code.
+Luanti server/mod (mods/evaaa_luanti) ⇄ request-correlated local HTTP polling bridge ⇄ Python Gymnasium environment ⇄ existing EVAAA training code.
 
 The Python bridge listens only on 127.0.0.1:8766. The Lua mod uses Luanti's asynchronous HTTP API; enable it only for this mod with the server setting documented in SETUP.md. No remote listener, shell execution, or arbitrary code endpoint is provided.
 
