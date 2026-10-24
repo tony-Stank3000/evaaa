@@ -57,6 +57,7 @@ if (Test-Path $modDestination) {
     Copy-Item -LiteralPath $modDestination -Destination $backup -Recurse
     Write-Host "Backed up existing mod to: $backup"
 }
+New-Item -ItemType Directory -Path $modDestination -Force | Out-Null
 Copy-Item -Path (Join-Path $modSource "*") -Destination $modDestination -Recurse -Force
 Write-Host "Installed EVAAA Luanti mod to: $modDestination"
 
