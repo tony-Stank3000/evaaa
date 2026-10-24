@@ -629,35 +629,58 @@ def main(fabric: Fabric, cfg: Dict[str, Any]):
                 next_obs, rewards, terminated, truncated, infos = envs.step(
                     real_actions.reshape(envs.action_space.shape)
                 )
-                if cfg.env.max_episode_steps !=0 and episode_survival_step > cfg.env.max_episode_steps:
+                if cfg.env.max_episode_steps != 0 and episode_survival_step > cfg.env.max_episode_steps:
                     terminated = True
                     truncated = True
 
-                # Aggregate raw rewards per env for average reward computation
-                rew_array = np.asarray(rewards, dtype=np.float32).reshape(-1)
-                if rew_array.shape[0] == 0:
-                    rew_array = np.zeros((cfg.env.num_envs,), dtype=np.float32)
-                if rew_array.shape[0] == 1 and cfg.env.num_envs > 1:
-                    rew_array = np.repeat(rew_array, cfg.env.num_envs)
-                episode_returns[: len(rew_array)] += rew_array[: len(episode_returns)]
-                episode_lengths[: len(rew_array)] += 1
-                if terminated:
-                    fabric.log("Survival Steps/Episode", episode_survival_step, episode)
-                    # Log average reward for the finished episode (single-env case)
-                    avg_rew = (
-                        float(episode_returns[0]) / float(episode_lengths[0]) if episode_lengths[0] > 0 else 0.0
-                    )
-                    fabric.log("Rewards/avg_per_episode", avg_rew, episode)
-                    # Reset counters for next episode
-                    episode_returns[0] = 0.0
-                    episode_lengths[0] = 0
-                    envs.reset()
-                    episode += 1
-                    episode_survival_step = 0
-
-                terminated = np.array([terminated], dtype=np.uint8)
-                truncated = np.array([truncated], dtype=np.uint8)
-
+                # Preserve the transition's final observation for replay, while the next
+                # policy step must consume the reset observation after either kind of done.
+                terminal_next_obs = copy.deepcopy(next_obs)
+                if cfg.env.num_envs == 1:
+                    terminated = bool(np.asarray(terminated).reshape(-1)[0])
+                    truncated = bool(np.asarray(truncated).reshape(-1)[0])
+                    rew_array = np.asarray(rewards, dtype=np.float32).reshape(1)
+                    episode_returns[0] += float(rew_array[0])
+                    episode_lengths[0] += 1
+                    if terminated or truncated:
+                        fabric.log("Survival Steps/Episode", episode_survival_step, episode)
+                        avg_rew = (
+                            float(episode_returns[0]) / float(episode_lengths[0])
+                            if episode_lengths[0] > 0 else 0.0
+                        )
+                        fabric.log("Rewards/avg_per_episode", avg_rew, episode)
+                        episode_returns[0] = 0.0
+                        episode_lengths[0] = 0
+                        next_obs, _reset_info = envs.reset()
+                        episode += 1
+                        episode_survival_step = 0
+                    rewards = rew_array
+                    terminated = np.array([terminated], dtype=np.uint8)
+                    truncated = np.array([truncated], dtype=np.uint8)
+                else:
+                    # Keep the existing vector-environment accounting path.
+                    rew_array = np.asarray(rewards, dtype=np.float32).reshape(-1)
+                    if rew_array.shape[0] == 0:
+                        rew_array = np.zeros((cfg.env.num_envs,), dtype=np.float32)
+                    if rew_array.shape[0] == 1 and cfg.env.num_envs > 1:
+                        rew_array = np.repeat(rew_array, cfg.env.num_envs)
+                    episode_returns[: len(rew_array)] += rew_array[: len(episode_returns)]
+                    episode_lengths[: len(rew_array)] += 1
+                    if np.any(terminated) or np.any(truncated):
+                        fabric.log("Survival Steps/Episode", episode_survival_step, episode)
+                        avg_rew = (
+                            float(episode_returns[0]) / float(episode_lengths[0])
+                            if episode_lengths[0] > 0 else 0.0
+                        )
+                        fabric.log("Rewards/avg_per_episode", avg_rew, episode)
+                        episode_returns[0] = 0.0
+                        episode_lengths[0] = 0
+                        envs.reset()
+                        episode += 1
+                        episode_survival_step = 0
+                    terminated = np.asarray(terminated, dtype=np.uint8)
+                    truncated = np.asarray(truncated, dtype=np.uint8)
+                    rewards = rew_array
                 dones = np.logical_or(terminated, truncated).astype(np.uint8)
 
             step_data["is_first"] = np.zeros_like(step_data["terminated"])
@@ -687,7 +710,7 @@ def main(fabric: Fabric, cfg: Dict[str, Any]):
                         fabric.print(f"Rank-0: policy_step={policy_step}, reward_env_{i}={ep_rew[-1]}")
 
             # Save the real next observation
-            real_next_obs = copy.deepcopy(next_obs)
+            real_next_obs = terminal_next_obs if cfg.env.num_envs == 1 else copy.deepcopy(next_obs)
             if "final_observation" in infos:
                 for idx, final_obs in enumerate(infos["final_observation"]):
                     if final_obs is not None:
