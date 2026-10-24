@@ -177,10 +177,14 @@ local function reset_episode(player)
 end
 
 local function poll_action()
+  -- Do not dequeue a Python command until a live player can receive it.
+  if not active_player() then return end
   json_get("/api/next", function(result)
     if not result or not result.succeeded or not result.data then return end
     local msg = minetest.parse_json(result.data)
     if type(msg) ~= "table" or msg.protocol_version ~= PROTOCOL_VERSION then return end
+    if msg.type ~= "reset" and msg.type ~= "step" then return end
+    if type(msg.request_id) ~= "number" or msg.request_id < 1 or msg.request_id % 1 ~= 0 then return end
     local player = active_player()
     if not player then return end
     if msg.type == "reset" then
