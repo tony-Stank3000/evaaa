@@ -185,8 +185,16 @@ local function poll_action()
       reset_episode(player)
       publish_observation()
     elseif msg.type == "step" and type(msg.action) == "number" and msg.action >= 0 and msg.action <= 4 then
-      apply_action(player, math.floor(msg.action))
-      minetest.after(ACTION_TICKS * 0.05, publish_observation)
+      local action = math.floor(msg.action)
+      apply_action(player, action)
+      minetest.after(ACTION_TICKS * 0.05, function()
+        -- Stop horizontal movement at the end of each action window.
+        if action == 1 and player:is_player() then
+          local vel = player:get_velocity() or {x = 0, y = 0, z = 0}
+          player:set_velocity({x = 0, y = vel.y or 0, z = 0})
+        end
+        publish_observation()
+      end)
     end
   end)
 end
