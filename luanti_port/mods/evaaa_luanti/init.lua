@@ -12,7 +12,8 @@ local TURN_RADIANS = math.rad(15)
 local SPEED = 2.5
 
 local elapsed = 0
-local request_in_flight = false
+local get_in_flight = false
+local post_in_flight = false
 local current_player_name = nil
 local food = 1.0
 local water = 1.0
@@ -28,8 +29,8 @@ local function log(msg)
 end
 
 local function json_post(path, payload, callback)
-  if request_in_flight then return end
-  request_in_flight = true
+  if post_in_flight then return end
+  post_in_flight = true
   http.fetch({
     url = BASE_URL .. path,
     method = "POST",
@@ -37,14 +38,14 @@ local function json_post(path, payload, callback)
     extra_headers = { "Content-Type: application/json" },
     timeout = 1.0,
   }, function(result)
-    request_in_flight = false
+    post_in_flight = false
     if callback then callback(result) end
   end)
 end
 
 local function json_get(path, callback)
-  if request_in_flight then return end
-  request_in_flight = true
+  if get_in_flight then return end
+  get_in_flight = true
   http.fetch({url = BASE_URL .. path, method = "GET", timeout = 1.0}, function(result)
     request_in_flight = false
     if callback then callback(result) end
