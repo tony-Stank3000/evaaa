@@ -60,6 +60,7 @@ class LuantiBridgeContractTests(unittest.TestCase):
             time.sleep(0.005)
         if command is None:
             self.fail("Gymnasium command was not available over HTTP.")
+        payload["request_id"] = command["request_id"]
         request = Request(
             base + "/api/observation",
             data=json.dumps(payload, allow_nan=False).encode("utf-8"),
@@ -108,6 +109,31 @@ class LuantiBridgeContractTests(unittest.TestCase):
                 env.reset()
             with env._broker.condition:
                 self.assertIsNone(env._broker.pending)
+        finally:
+            env.close()
+
+    def test_late_response_does_not_satisfy_next_command(self):
+        env = LuantiBridgeEnv(port=free_port(), timeout=0.08)
+        try:
+            with self.assertRaises(TimeoutError):
+                env.reset()
+            # The first command was never consumed. The next request must not accept
+            # an old response even if one arrives after a timeout.
+            stale = valid_payload()
+            stale["request_id"] = 1
+            with env._broker.condition:
+                env._broker.publish(stale)
+            worker_result = {}
+            worker = threading.Thread(target=lambda: worker_result.setdefault("value", env.reset()))
+            worker.start()
+            time.sleep(0.02)
+            with env._broker.condition:
+                current = env._broker.pending
+                self.assertIsNotNone(current)
+                self.assertEqual(current["request_id"], 2)
+            worker.join(timeout=0.2)
+            self.assertFalse(worker.is_alive())
+            self.assertNotIn("value", worker_result)
         finally:
             env.close()
 
