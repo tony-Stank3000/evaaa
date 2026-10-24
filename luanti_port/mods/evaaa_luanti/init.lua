@@ -91,12 +91,14 @@ local function build_observation(player)
   -- 16x16 node-name raster expanded to 64x64. Synthetic encoding, not a screenshot.
   for py = 1, 64 do
     local gz = math.floor((py - 1) / 4) - 8
+    local row = {}
     for px = 1, 64 do
       local gx = math.floor((px - 1) / 4) - 8
       local name = (cells[gz] and cells[gz][gx]) or "unknown"
       local id = minetest.get_content_id(name)
-      rgb[#rgb + 1] = {id % 256, math.floor(id / 256) % 256, (id * 31) % 256}
+      row[#row + 1] = {id % 256, math.floor(id / 256) % 256, (id * 31) % 256}
     end
+    rgb[#rgb + 1] = row
   end
 
   local olfactory, thermo, collision = {}, {}, {}
