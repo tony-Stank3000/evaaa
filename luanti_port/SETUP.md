@@ -32,11 +32,15 @@ The mod needs Luanti's asynchronous HTTP API to communicate with the Python proc
 
 This setting grants HTTP API access to the named mod; do not add unrelated mods. The bridge URL is hard-coded to loopback (127.0.0.1:8766) by default. The Python adapter and Lua mod use protocol version 2 with per-command request IDs; install both from the same repository revision. If your Luanti build blocks loopback HTTP requests, do not disable broader security controls; we will adjust the transport after checking the exact Luanti version/log.
 
-## 4. Python dependencies and training
+## 4. Python dependencies and live smoke test
 
-Use the same Python environment as EVAAA training, where gymnasium and numpy are installed. The HTTP broker starts inside the Gymnasium environment when the trainer instantiates it; do not start a second bridge process on the same port. You can check that the listener is up at `http://127.0.0.1:8766/health` while training is starting. If you start training before joining the world, the Lua mod now leaves commands queued until a player is available.
+Use the same Python environment as EVAAA training, where `gymnasium` and `numpy` are installed. Open Mineclonia, enter the selected world, and keep it running. From the repository root, run this one-command test:
 
-From the evaaa_train directory, after the mod is enabled and the world is open, run one of the configured experiments:
+    python -m luanti_port.python.live_smoke_test
+
+The script starts the local HTTP bridge, requests one reset and one no-op step, and prints observation shapes and reward. It waits up to 30 seconds for the mod. This is the first live integration check; a passing offline contract test alone does not prove the Lua mod works. The broker's health endpoint is `http://127.0.0.1:8766/health` while the script is running. Do not start a second bridge process on the same port.
+
+After the live smoke test passes, use the same Python environment for training. From the `evaaa_train` directory, with the mod enabled and the world open, run one of the configured experiments:
 
     python train.py exp=ppo_luanti
 
