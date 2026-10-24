@@ -131,7 +131,12 @@ class LuantiBridgeContractTests(unittest.TestCase):
             with env._broker.condition:
                 env._broker.publish(stale)
             worker_result = {}
-            worker = threading.Thread(target=lambda: worker_result.setdefault("value", env.reset()))
+            def request_reset():
+                try:
+                    worker_result["value"] = env.reset()
+                except Exception as exc:
+                    worker_result["error"] = exc
+            worker = threading.Thread(target=request_reset)
             worker.start()
             time.sleep(0.02)
             with env._broker.condition:
@@ -140,6 +145,7 @@ class LuantiBridgeContractTests(unittest.TestCase):
                 self.assertEqual(current["request_id"], 2)
             worker.join(timeout=0.2)
             self.assertFalse(worker.is_alive())
+            self.assertIsInstance(worker_result.get("error"), TimeoutError)
             self.assertNotIn("value", worker_result)
         finally:
             env.close()
