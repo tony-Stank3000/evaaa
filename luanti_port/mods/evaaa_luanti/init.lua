@@ -5,7 +5,7 @@
 local MOD_NAME = minetest.get_current_modname()
 local http = minetest.request_http_api()
 local BASE_URL = "http://127.0.0.1:8766"
-local PROTOCOL_VERSION = 1
+local PROTOCOL_VERSION = 2
 local POLL_INTERVAL = 0.20
 local ACTION_TICKS = 5
 local TURN_RADIANS = math.rad(15)
@@ -124,7 +124,7 @@ local function build_observation(player)
   }
 end
 
-local function publish_observation()
+local function publish_observation(request_id)
   local player = active_player()
   if not player then return end
   food = math.max(0, food - 0.0005)
@@ -133,6 +133,7 @@ local function publish_observation()
   local reward = -math.sqrt((1 - food)^2 + (1 - water)^2)
   json_post("/api/observation", {
     protocol_version = PROTOCOL_VERSION,
+    request_id = request_id,
     player = player:get_player_name(),
     observation = build_observation(player),
     reward = reward,
@@ -184,7 +185,7 @@ local function poll_action()
     if not player then return end
     if msg.type == "reset" then
       reset_episode(player)
-      publish_observation()
+      publish_observation(msg.request_id)
     elseif msg.type == "step" and type(msg.action) == "number" and msg.action >= 0 and msg.action <= 4 then
       local action = math.floor(msg.action)
       apply_action(player, action)
@@ -194,7 +195,7 @@ local function poll_action()
           local vel = player:get_velocity() or {x = 0, y = 0, z = 0}
           player:set_velocity({x = 0, y = vel.y or 0, z = 0})
         end
-        publish_observation()
+        publish_observation(msg.request_id)
       end)
     end
   end)
