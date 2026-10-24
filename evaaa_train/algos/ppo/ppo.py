@@ -321,32 +321,50 @@ def main(fabric: Fabric, cfg: Dict[str, Any]):
 
                     # Single environment step
                     obs, rewards, terminated, truncated, info = envs.step(real_actions.reshape(envs.action_space.shape))
-                    if terminated:
-                        fabric.log("Survival Steps/Episode", episode_survival_step, episode)
-                        envs.reset()
-                        episode += 1
-                        episode_survival_step = 0
-
-                    truncated_envs = np.nonzero(truncated)[0]
-                    if len(truncated_envs) > 0:
-                        real_next_obs = {
-                            k: torch.empty(
-                                len(truncated_envs),
-                                *observation_space[k].shape,
-                                dtype=torch.float32,
-                                device=device,
+                    if cfg.env.num_envs == 1:
+                        # The single-env path returns scalar flags and has no vector-env final_observation field.
+                        terminated = bool(np.asarray(terminated).reshape(-1)[0])
+                        truncated = bool(np.asarray(truncated).reshape(-1)[0])
+                        rewards = np.asarray(rewards, dtype=np.float32).reshape(1)
+                        if truncated:
+                            terminal_torch_obs = prepare_obs(
+                                fabric, obs, cnn_keys=cfg.algo.cnn_keys.encoder, num_envs=1
                             )
-                            for k in obs_keys
-                        }
-                        for i, truncated_env in enumerate(truncated_envs):
-                            for k, v in info["final_observation"][truncated_env].items():
-                                torch_v = torch.as_tensor(v, dtype=torch.float32, device=device)
-                                if k in cfg.algo.cnn_keys.encoder:
-                                    torch_v = torch_v.view(-1, *v.shape[-2:])
-                                    torch_v = torch_v / 255.0 - 0.5
-                                real_next_obs[k][i] = torch_v
-                        vals = player.get_values(real_next_obs).cpu().numpy()
-                        rewards[truncated_envs] += cfg.algo.gamma * vals.reshape(rewards[truncated_envs].shape)
+                            vals = player.get_values(terminal_torch_obs).cpu().numpy()
+                            rewards[0] += cfg.algo.gamma * float(vals.reshape(-1)[0])
+                        if terminated or truncated:
+                            fabric.log("Survival Steps/Episode", episode_survival_step, episode)
+                            # Reset observation must become the next policy input.
+                            obs, _reset_info = envs.reset()
+                            episode += 1
+                            episode_survival_step = 0
+                    else:
+                        if np.any(terminated):
+                            fabric.log("Survival Steps/Episode", episode_survival_step, episode)
+                            envs.reset()
+                            episode += 1
+                            episode_survival_step = 0
+
+                        truncated_envs = np.nonzero(truncated)[0]
+                        if len(truncated_envs) > 0:
+                            real_next_obs = {
+                                k: torch.empty(
+                                    len(truncated_envs),
+                                    *observation_space[k].shape,
+                                    dtype=torch.float32,
+                                    device=device,
+                                )
+                                for k in obs_keys
+                            }
+                            for i, truncated_env in enumerate(truncated_envs):
+                                for k, v in info["final_observation"][truncated_env].items():
+                                    torch_v = torch.as_tensor(v, dtype=torch.float32, device=device)
+                                    if k in cfg.algo.cnn_keys.encoder:
+                                        torch_v = torch_v.view(-1, *v.shape[-2:])
+                                        torch_v = torch_v / 255.0 - 0.5
+                                    real_next_obs[k][i] = torch_v
+                            vals = player.get_values(real_next_obs).cpu().numpy()
+                            rewards[truncated_envs] += cfg.algo.gamma * vals.reshape(rewards[truncated_envs].shape)
                     dones = np.logical_or(terminated, truncated).reshape(cfg.env.num_envs, -1).astype(np.uint8)
                     rewards = clip_rewards_fn(rewards).reshape(cfg.env.num_envs, -1).astype(np.float32)
 
