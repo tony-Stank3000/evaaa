@@ -26,7 +26,7 @@ This setting grants HTTP API access to the named mod; do not add unrelated mods.
 
 ## 4. Python dependencies and training
 
-Use the same Python environment as EVAAA training, where gymnasium and numpy are installed. The HTTP broker starts inside the Gymnasium environment when the trainer instantiates it; do not start a second bridge process on the same port.
+Use the same Python environment as EVAAA training, where gymnasium and numpy are installed. The HTTP broker starts inside the Gymnasium environment when the trainer instantiates it; do not start a second bridge process on the same port. You can check that the listener is up at `http://127.0.0.1:8766/health` while training is starting. If you start training before joining the world, the Lua mod now leaves commands queued until a player is available.
 
 From the evaaa_train directory, after the mod is enabled and the world is open, run one of the configured experiments:
 
