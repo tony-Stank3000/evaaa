@@ -1,10 +1,12 @@
 """Contract tests for the Luanti Gymnasium bridge; no Luanti installation required."""
 from __future__ import annotations
 
+import json
 import socket
 import threading
 import time
 import unittest
+from urllib.request import Request, urlopen
 
 import numpy as np
 
@@ -45,15 +47,28 @@ class LuantiBridgeContractTests(unittest.TestCase):
         self.env.close()
 
     def respond_to_next_command(self, payload):
+        # Exercise the real HTTP protocol used by the Lua mod, not private broker methods.
+        base = f"http://127.0.0.1:{self.env.port}"
         deadline = time.monotonic() + 1.0
+        command = None
         while time.monotonic() < deadline:
-            with self.env._broker.condition:
-                pending = self.env._broker.pending
-            if pending is not None:
-                self.env._broker.publish(payload)
-                return
+            with urlopen(base + "/api/next", timeout=0.5) as response:
+                candidate = json.loads(response.read().decode("utf-8"))
+            if candidate.get("type") in ("reset", "step"):
+                command = candidate
+                break
             time.sleep(0.005)
-        self.fail("Gymnasium command was not queued.")
+        if command is None:
+            self.fail("Gymnasium command was not available over HTTP.")
+        request = Request(
+            base + "/api/observation",
+            data=json.dumps(payload, allow_nan=False).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request, timeout=1.0) as response:
+            self.assertEqual(response.status, 200)
+            self.assertTrue(json.loads(response.read().decode("utf-8"))["ok"])
 
     def test_action_mapping(self):
         self.assertEqual(ACTION_NAMES, {0: "none", 1: "forward", 2: "left", 3: "right", 4: "eat"})
@@ -66,7 +81,7 @@ class LuantiBridgeContractTests(unittest.TestCase):
         worker.join(timeout=2)
         self.assertFalse(worker.is_alive())
         obs, _info = output["value"]
-        self.assertEqual(obs["rgb"].shape, (3, 64, 64))
+        self.assertEqual(obs["rgb"].shape, (3, 64, 64))\n        self.assertEqual(obs["rgb"][0, 0, 0], 0)\n        self.assertEqual(obs["rgb"][1, 0, 0], 12)\n        self.assertEqual(obs["rgb"][2, 0, 0], 255)
         self.assertEqual(obs["ev"].shape, (4,))
         self.assertEqual(obs["olfactory"].shape, (10,))
         self.assertTrue(self.env.observation_space.contains(obs))
