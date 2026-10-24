@@ -120,7 +120,7 @@ class LuantiBridgeContractTests(unittest.TestCase):
             env.close()
 
     def test_late_response_does_not_satisfy_next_command(self):
-        env = LuantiBridgeEnv(port=free_port(), timeout=0.08)
+        env = LuantiBridgeEnv(port=free_port(), timeout=0.15)
         try:
             with self.assertRaises(TimeoutError):
                 env.reset()
@@ -138,12 +138,14 @@ class LuantiBridgeContractTests(unittest.TestCase):
                     worker_result["error"] = exc
             worker = threading.Thread(target=request_reset)
             worker.start()
-            time.sleep(0.02)
+            deadline = time.monotonic() + 0.1
             with env._broker.condition:
+                while env._broker.pending is None and time.monotonic() < deadline:
+                    env._broker.condition.wait(deadline - time.monotonic())
                 current = env._broker.pending
                 self.assertIsNotNone(current)
                 self.assertEqual(current["request_id"], 2)
-            worker.join(timeout=0.2)
+            worker.join(timeout=0.3)
             self.assertFalse(worker.is_alive())
             self.assertIsInstance(worker_result.get("error"), TimeoutError)
             self.assertNotIn("value", worker_result)
