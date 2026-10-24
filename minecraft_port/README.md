@@ -1,6 +1,8 @@
-# EVAAA Minecraft port (experimental)
+# EVAAA Minecraft Java port (legacy scaffold)
 
-This directory contains the initial Python-side bridge client and a protocol contract. It is not yet a complete, live Minecraft port: a Minecraft Java-side implementation is still required.
+**The active free-game target is now Luanti. See [luanti_port/README.md](../luanti_port/README.md).**
+
+This directory preserves the earlier Minecraft Java/Fabric bridge contract and Python adapter. It is not a complete, live Minecraft port: no Java-side implementation is present, and this path is not used by the Luanti experiment.
 
 ## Implementation status
 
