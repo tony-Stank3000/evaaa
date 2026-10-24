@@ -47,7 +47,7 @@ local function json_get(path, callback)
   if get_in_flight then return end
   get_in_flight = true
   http.fetch({url = BASE_URL .. path, method = "GET", timeout = 1.0}, function(result)
-    request_in_flight = false
+    get_in_flight = false
     if callback then callback(result) end
   end)
 end
