@@ -18,7 +18,7 @@ from gymnasium import spaces
 PROTOCOL_VERSION = 1
 ACTION_NAMES = {0: "none", 1: "forward", 2: "left", 3: "right", 4: "eat"}
 VECTOR_SHAPES = {"ev": (4,), "olfactory": (10,), "thermo": (8,), "collision": (10,), "touch": (1,)}
-RGB_SHAPE = (64, 64, 3)
+WIRE_RGB_SHAPE = (64, 64, 3)  # Lua JSON uses height, width, RGB channels\nMODEL_RGB_SHAPE = (3, 64, 64)  # EVAAA CNN pipeline expects channel-first tensors
 
 
 class BridgeProtocolError(RuntimeError):
@@ -133,7 +133,7 @@ class LuantiBridgeEnv(gym.Env):
         self.host, self.port, self.timeout = host, int(port), float(timeout)
         self.action_space = spaces.Discrete(len(ACTION_NAMES))
         self.observation_space = spaces.Dict({
-            "rgb": spaces.Box(0, 255, shape=RGB_SHAPE, dtype=np.uint8),
+            "rgb": spaces.Box(0, 255, shape=MODEL_RGB_SHAPE, dtype=np.uint8),
             **{key: spaces.Box(-np.inf, np.inf, shape=shape, dtype=np.float32)
                for key, shape in VECTOR_SHAPES.items()},
         })
@@ -162,7 +162,7 @@ class LuantiBridgeEnv(gym.Env):
             raise BridgeProtocolError(f"rgb must be numeric with shape {RGB_SHAPE}, got {rgb.shape}")
         if not np.isfinite(rgb).all() or np.any(rgb < 0) or np.any(rgb > 255) or not np.equal(rgb, np.floor(rgb)).all():
             raise BridgeProtocolError("rgb pixels must be integer values in [0,255]")
-        result: dict[str, np.ndarray] = {"rgb": rgb.astype(np.uint8, copy=False)}
+        result: dict[str, np.ndarray] = {"rgb": np.transpose(rgb.astype(np.uint8, copy=False), (2, 0, 1)).copy()}
         for key, shape in VECTOR_SHAPES.items():
             arr = np.asarray(obs[key], dtype=np.float32)
             if arr.shape != shape or not np.isfinite(arr).all():
