@@ -98,6 +98,16 @@ class LuantiBridgeContractTests(unittest.TestCase):
         self.assertFalse(terminated)
         self.assertFalse(truncated)
 
+    def test_timeout_clears_unconsumed_command(self):
+        env = LuantiBridgeEnv(port=free_port(), timeout=0.05)
+        try:
+            with self.assertRaises(TimeoutError):
+                env.reset()
+            with env._broker.condition:
+                self.assertIsNone(env._broker.pending)
+        finally:
+            env.close()
+
     def test_rejects_non_loopback_host(self):
         with self.assertRaises(ValueError):
             LuantiBridgeEnv(host="0.0.0.0", port=free_port())
