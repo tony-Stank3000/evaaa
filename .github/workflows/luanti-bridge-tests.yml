@@ -10,6 +10,8 @@ on:
   pull_request:
     paths:
       - "luanti_port/**"
+      - "evaaa_train/algos/ppo/ppo.py"
+      - "evaaa_train/algos/dreamer_v3/dreamer_v3.py"
       - ".github/workflows/luanti-bridge-tests.yml"
   workflow_dispatch:
 
