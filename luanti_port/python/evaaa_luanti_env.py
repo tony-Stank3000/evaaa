@@ -149,7 +149,7 @@ class LuantiBridgeEnv(gym.Env):
 
     def __init__(self, host: str = "127.0.0.1", port: int = 8766, timeout: float = 15.0):
         super().__init__()
-        if host not in ("127.0.0.1", "localhost", "::1"):
+        if host not in ("127.0.0.1", "localhost"):
             raise ValueError("The Luanti bridge must bind to loopback.")
         if not 1 <= int(port) <= 65535:
             raise ValueError("port must be in [1, 65535]")
