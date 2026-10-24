@@ -16,8 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check out repository
+      - name: Check out repository (sparse, avoid large research assets)
         uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: luanti_port
+          sparse-checkout-cone-mode: true
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
