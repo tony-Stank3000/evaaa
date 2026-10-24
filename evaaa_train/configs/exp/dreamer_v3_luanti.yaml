@@ -1,0 +1,17 @@
+# @package _global_
+defaults:
+  - override /algo: dreamer_v3
+  - override /env: luanti_bridge
+  - override /model_manager: dreamer_v3
+  - _self_
+
+env:
+  num_envs: 1
+  frame_stack: 1
+  screen_size: 64
+
+checkpoint:
+  every: 100000
+
+algo:
+  total_steps: 1000000
