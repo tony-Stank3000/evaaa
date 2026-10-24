@@ -6,6 +6,10 @@ on:
       - "luanti_port/**"
       - "evaaa_train/algos/ppo/ppo.py"
       - "evaaa_train/algos/dreamer_v3/dreamer_v3.py"
+      - "evaaa_train/envs/**"
+      - "evaaa_train/configs/env/luanti_bridge.yaml"
+      - "evaaa_train/configs/exp/ppo_luanti.yaml"
+      - "evaaa_train/configs/exp/dreamer_v3_luanti.yaml"
       - ".github/workflows/luanti-bridge-tests.yml"
   pull_request:
     paths:
@@ -32,14 +36,17 @@ jobs:
             luanti_port
             evaaa_train/algos/ppo
             evaaa_train/algos/dreamer_v3
+            evaaa_train/envs
+            evaaa_train/configs/env
+            evaaa_train/configs/exp
           sparse-checkout-cone-mode: true
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install test dependencies
-        run: python -m pip install --upgrade pip gymnasium numpy
+        run: python -m pip install --upgrade pip gymnasium numpy pyyaml
       - name: Compile bridge and modified trainer entry points
         run: python -m compileall -q luanti_port evaaa_train/algos/ppo/ppo.py evaaa_train/algos/dreamer_v3/dreamer_v3.py
       - name: Run Luanti bridge contract tests
-        run: python -m unittest luanti_port.python.test_luanti_env -v
+        run: python -m unittest luanti_port.python.test_luanti_env luanti_port.python.test_training_integration -v
