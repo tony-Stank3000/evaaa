@@ -14,7 +14,7 @@ Status: initial implementation scaffold only. All mappings below require live va
 
 ## Observations
 
-- rgb [64,64,3]: not a screenshot. It is an explicitly synthetic egocentric voxel raster derived from nearby node names/content IDs. Do not describe it as camera imagery.
+- Lua HTTP wire rgb [64,64,3]: not a screenshot. It is an explicitly synthetic egocentric voxel raster derived from nearby node names/content IDs. The Python adapter converts it to channel-first [3,64,64] for the existing EVAAA CNN pipeline. Do not describe it as camera imagery.
 - ev [4]: food, water, temperature deviation, health. Food/water are experimental internal meters; health comes from the game player. They are not calibrated to the paper's physiological units.
 - olfactory [10]: experimental resource-proximity features derived from sampled node categories. No direct equivalent to the original sensor.
 - thermo [8]: experimental directional environment features; not a direct physiological temperature sensor.
