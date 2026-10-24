@@ -183,10 +183,14 @@ class LuantiBridgeEnv(gym.Env):
             raise ValueError(f"Invalid action {action}; expected an integer from 0 to 4.")
         payload = self._await_command({"type": "step", "action": int(action), "action_name": ACTION_NAMES[int(action)]})
         obs = self._validate_observation(payload)
-        reward = float(payload.get("reward", 0.0))
+        if not all(key in payload for key in ("reward", "terminated", "truncated")):
+            raise BridgeProtocolError("Step response must include reward, terminated, and truncated.")
+        reward = float(payload["reward"])
         if not np.isfinite(reward):
             raise BridgeProtocolError("Reward must be finite.")
-        return obs, reward, bool(payload.get("terminated", False)), bool(payload.get("truncated", False)), payload.get("info", {})
+        if not isinstance(payload["terminated"], bool) or not isinstance(payload["truncated"], bool):
+            raise BridgeProtocolError("terminated and truncated must be booleans.")
+        return obs, reward, payload["terminated"], payload["truncated"], payload.get("info", {})
 
     def close(self) -> None:
         if getattr(self, "_server", None):
