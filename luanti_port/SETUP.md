@@ -4,9 +4,17 @@
 
 Use **Mineclonia** for the first survival-oriented run. Create a local world with Mineclonia selected. Keep the world private for testing.
 
-## 2. Install the mod
+## 2. Install the mod (Windows helper)
 
-Copy the directory mods/evaaa_luanti/ into the world's worldmods/ directory, or install it as a normal Luanti mod and enable it for the target world. The directory must contain mod.conf and init.lua.
+From the cloned repository root, run this in PowerShell:
+
+    .\luanti_port\install_mod_windows.ps1
+
+The helper searches common Luanti data folders, lets you select the Mineclonia world, copies the mod into that world's `worldmods` directory, and adds only `evaaa_luanti` to the `secure.http_mods` allowlist in `minetest.conf` when it can find that file. It backs up an existing mod folder and config before changing them. If your world is in a portable/custom location, pass it explicitly:
+
+    .\luanti_port\install_mod_windows.ps1 -WorldPath "C:\full\path\to\world"
+
+The selected world folder must contain `world.mt`. Restart Luanti after installation.
 
 For a world-specific installation, the structure is:
 
