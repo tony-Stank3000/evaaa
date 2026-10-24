@@ -89,7 +89,7 @@ def main(cfg: DictConfig):
     os.makedirs(env_cfg_save_dir, exist_ok=True)
 
     # Unity-backed EVAAA environments carry a separate scene configuration.
-    # Non-Unity environments (such as the Minecraft bridge) do not have this
+    # Non-Unity environments (such as the Luanti bridge) do not have this
     # directory and must not be forced through the Unity-specific copy path.
     wrapper_target = str(cfg.env.wrapper.get("_target_", ""))
     if "env_cfg" in cfg.env.wrapper and "env" in cfg.env.wrapper.env_cfg:
