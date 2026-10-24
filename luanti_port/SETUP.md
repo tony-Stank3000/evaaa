@@ -24,13 +24,19 @@ The mod needs Luanti's asynchronous HTTP API to communicate with the Python proc
 
 This setting grants HTTP API access to the named mod; do not add unrelated mods. The bridge URL is hard-coded to loopback (127.0.0.1:8766) by default. If your Luanti build blocks loopback HTTP requests, do not disable broader security controls; we will adjust the transport after checking the exact Luanti version/log.
 
-## 4. Python dependencies
+## 4. Python dependencies and training
 
-Use the same Python environment as EVAAA training, where gymnasium and numpy are installed. Start the environment/bridge from the repository root:
+Use the same Python environment as EVAAA training, where gymnasium and numpy are installed. The HTTP broker starts inside the Gymnasium environment when the trainer instantiates it; do not start a second bridge process on the same port.
 
-    python -m luanti_port.python.evaaa_luanti_env
+From the evaaa_train directory, after the mod is enabled and the world is open, run one of the configured experiments:
 
-This starts a loopback HTTP service on port 8766. Keep it running while the world is open. The module includes a small server entry point for transport smoke checks; training integration is a separate step.
+    python train.py exp=ppo_luanti
+
+DreamerV3 is also configured:
+
+    python train.py exp=dreamer_v3_luanti
+
+These commands are integration targets, not proof that training already runs end-to-end. First use a short smoke test and inspect the Luanti log. The Gymnasium environment waits for the mod to respond, then raises a timeout with guidance if no live world is connected.
 
 ## 5. Confirm the mod loaded
 
