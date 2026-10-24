@@ -710,7 +710,11 @@ def main(fabric: Fabric, cfg: Dict[str, Any]):
                         fabric.print(f"Rank-0: policy_step={policy_step}, reward_env_{i}={ep_rew[-1]}")
 
             # Save the real next observation
-            real_next_obs = terminal_next_obs if cfg.env.num_envs == 1 else copy.deepcopy(next_obs)
+            real_next_obs = (
+                {k: np.expand_dims(v, axis=0) for k, v in terminal_next_obs.items()}
+                if cfg.env.num_envs == 1
+                else copy.deepcopy(next_obs)
+            )
             if "final_observation" in infos:
                 for idx, final_obs in enumerate(infos["final_observation"]):
                     if final_obs is not None:
