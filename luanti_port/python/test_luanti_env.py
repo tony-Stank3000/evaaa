@@ -151,8 +151,9 @@ class LuantiBridgeContractTests(unittest.TestCase):
             env.close()
 
     def test_rejects_non_loopback_host(self):
-        with self.assertRaises(ValueError):
-            LuantiBridgeEnv(host="0.0.0.0", port=free_port())
+        for host in ("0.0.0.0", "::1"):
+            with self.subTest(host=host), self.assertRaises(ValueError):
+                LuantiBridgeEnv(host=host, port=free_port())
 
     def test_rejects_invalid_action(self):
         with self.assertRaises(ValueError):
