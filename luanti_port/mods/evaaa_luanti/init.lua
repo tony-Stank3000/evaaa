@@ -95,7 +95,7 @@ local function build_observation(player)
     for px = 1, 64 do
       local gx = math.floor((px - 1) / 4) - 8
       local name = (cells[gz] and cells[gz][gx]) or "unknown"
-      local id = minetest.get_content_id(name)
+      local id = minetest.get_content_id(name) or 0
       row[#row + 1] = {id % 256, math.floor(id / 256) % 256, (id * 31) % 256}
     end
     rgb[#rgb + 1] = row
